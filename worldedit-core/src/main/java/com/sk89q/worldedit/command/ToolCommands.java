@@ -19,8 +19,10 @@
 
 package com.sk89q.worldedit.command;
 
+import com.fastasyncworldedit.core.command.tool.FeaturePlacer;
 import com.fastasyncworldedit.core.command.tool.brush.InspectBrush;
 import com.fastasyncworldedit.core.configuration.Caption;
+import com.fastasyncworldedit.core.world.feature.ConfiguredFeature;
 import com.google.common.collect.Collections2;
 import com.sk89q.worldedit.LocalConfiguration;
 import com.sk89q.worldedit.LocalSession;
@@ -243,6 +245,22 @@ public class ToolCommands {
     ) throws WorldEditException {
         setTool(player, session, new TreePlanter(type), "worldedit.tool.tree.equip");
     }
+
+    //FAWE start
+    @Command(
+            name = "featureplacer",
+            aliases = {"/featureplacer", "featuretool", "/featuretool"},
+            desc = "Feature placer tool"
+    )
+    @CommandPermissions("worldedit.tool.feature")
+    public void tree(
+            Player player, LocalSession session,
+            @Arg(desc = "Type of feature to place", def = "forest_rock")
+            ConfiguredFeature feature
+    ) throws WorldEditException {
+        setTool(player, session, new FeaturePlacer(feature), "worldedit.tool.feature.equip");
+    }
+    //FAWE end
 
     @Command(
             name = "stacker",

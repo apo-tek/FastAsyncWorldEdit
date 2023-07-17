@@ -392,4 +392,35 @@ public interface IBukkitAdapter {
         return TaskManager.taskManager().sync(world::getEntities);
     }
 
+    /**
+     * Place a feature into an editsession
+     *
+     * @param feature     feature to place
+     * @param editSession session to place into
+     * @param world       world to use
+     * @param x           x position to use
+     * @param y           y position to use
+     * @param z           z position to use
+     * @return true if successfully placed
+     * @since TODO
+     */
+    default boolean placeFeature(
+            com.fastasyncworldedit.core.world.feature.ConfiguredFeature feature,
+            EditSession editSession,
+            org.bukkit.World world,
+            int x,
+            int y,
+            int z
+    ) {
+        return false;
+    }
+
+    /**
+     * Import Minecraft internal features into FAWE. Should be executed after worlds loading (in order to capture datapacks)
+     *
+     * @since TODO
+     */
+    default void setupFeatures() {
+    }
+
 }

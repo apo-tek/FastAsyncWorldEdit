@@ -19,6 +19,7 @@
 
 package com.sk89q.worldedit.command.argument;
 
+import com.fastasyncworldedit.core.world.feature.ConfiguredFeature;
 import com.google.common.collect.ImmutableList;
 import com.sk89q.worldedit.command.util.SuggestionHelper;
 import com.sk89q.worldedit.registry.Keyed;
@@ -62,7 +63,10 @@ public final class RegistryConverter<V extends Keyed> implements ArgumentConvert
                         FluidType.class,
                         FluidCategory.class,
                         GameMode.class,
-                        WeatherType.class
+                        WeatherType.class,
+                        //FAWE start,
+                        ConfiguredFeature.class
+                        //FAWE end
                 )
                 .stream()
                 .map(c -> (Class<Keyed>) c)

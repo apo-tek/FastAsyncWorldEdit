@@ -29,6 +29,7 @@ import com.fastasyncworldedit.core.util.MaskTraverser;
 import com.fastasyncworldedit.core.util.MathMan;
 import com.fastasyncworldedit.core.util.TextureUtil;
 import com.fastasyncworldedit.core.util.image.ImageUtil;
+import com.fastasyncworldedit.core.world.feature.ConfiguredFeature;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.LocalSession;
 import com.sk89q.worldedit.WorldEdit;
@@ -62,7 +63,7 @@ import org.enginehub.piston.annotation.param.Arg;
 import org.enginehub.piston.annotation.param.Switch;
 import org.jetbrains.annotations.Range;
 
-import java.awt.RenderingHints;
+import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -714,7 +715,7 @@ public class GenerationCommands {
     )
     @Logging(PLACEMENT)
     @CommandPermissions("worldedit.generation.blob")
-    public int blobBrush(
+    public int blob(
             Actor actor, LocalSession session, EditSession editSession,
             @Arg(desc = "Pattern")
                     Pattern pattern,
@@ -744,7 +745,29 @@ public class GenerationCommands {
         if (actor instanceof Player) {
             ((Player) actor).findFreePosition();
         }
-        actor.print(Caption.of("worldedit.sphere.created", TextComponent.of(affected)));
+        actor.print(Caption.of("worldedit.blob.created", TextComponent.of(affected)));
+        return affected;
+    }
+
+    @Command(
+            name = "/feature",
+            aliases = {"/placefeature"},
+            desc = "Creates a distorted sphere"
+    )
+    @Logging(PLACEMENT)
+    @CommandPermissions("worldedit.generation.feature")
+    public int feature(
+            Actor actor, LocalSession session, EditSession editSession,
+            @Arg(desc = "Type of feature to place", def = "forest_rock")
+            ConfiguredFeature feature
+    ) throws WorldEditException {
+        int affected = editSession.placeFeature(feature, session.getPlacementPosition(actor));
+
+        if (affected == 0) {
+            actor.print(Caption.of("worldedit.generate.feature.failed"));
+        } else {
+            actor.print(Caption.of("worldedit.feature.created", TextComponent.of(affected)));
+        }
         return affected;
     }
     //FAWE end

@@ -22,6 +22,7 @@ package com.sk89q.worldedit.world;
 import com.fastasyncworldedit.core.queue.IChunkCache;
 import com.fastasyncworldedit.core.queue.IChunkGet;
 import com.fastasyncworldedit.core.queue.implementation.packet.ChunkPacket;
+import com.fastasyncworldedit.core.world.feature.ConfiguredFeature;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.WorldEditException;
@@ -310,6 +311,21 @@ public interface World extends Extent, Keyed, IChunkCache<IChunkGet> {
      */
     boolean generateTree(TreeGenerator.TreeType type, EditSession editSession, BlockVector3 position) throws
             MaxChangedBlocksException;
+
+    /**
+     * Place a feature at the given position
+     *
+     * @param feature     Feature to place
+     * @param editSession the {@link EditSession}
+     * @param pos         the position
+     * @return true if placement was successful
+     * @throws MaxChangedBlocksException thrown if too many blocks were changed
+     * @since TODO
+     */
+    default boolean placeFeature(ConfiguredFeature<?> feature, EditSession editSession, final BlockVector3 pos) throws
+            MaxChangedBlocksException {
+        return false;
+    }
 
     /**
      * Load the chunk at the given position if it isn't loaded.

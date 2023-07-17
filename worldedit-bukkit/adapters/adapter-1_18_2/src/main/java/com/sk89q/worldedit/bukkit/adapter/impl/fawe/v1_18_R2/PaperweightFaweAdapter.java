@@ -14,6 +14,7 @@ import com.fastasyncworldedit.core.util.TaskManager;
 import com.google.common.base.Preconditions;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.jnbt.Tag;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.blocks.BaseItemStack;
@@ -57,10 +58,21 @@ import com.sk89q.worldedit.world.item.ItemType;
 import com.sk89q.worldedit.world.registry.BlockMaterial;
 import io.papermc.lib.PaperLib;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.core.WritableRegistry;
+import net.minecraft.data.worldgen.features.AquaticFeatures;
+import net.minecraft.data.worldgen.features.CaveFeatures;
+import net.minecraft.data.worldgen.features.EndFeatures;
+import net.minecraft.data.worldgen.features.MiscOverworldFeatures;
+import net.minecraft.data.worldgen.features.NetherFeatures;
+import net.minecraft.data.worldgen.features.OreFeatures;
+import net.minecraft.data.worldgen.features.PileFeatures;
+import net.minecraft.data.worldgen.features.TreeFeatures;
+import net.minecraft.data.worldgen.features.VegetationFeatures;
 import net.minecraft.nbt.IntTag;
 import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
@@ -75,14 +87,17 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.chunk.ChunkGenerator;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
 import org.apache.logging.log4j.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.NamespacedKey;
 import org.bukkit.TreeType;
+import org.bukkit.World;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.craftbukkit.v1_18_R2.CraftChunk;
 import org.bukkit.craftbukkit.v1_18_R2.CraftServer;
@@ -106,7 +121,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.OptionalInt;
+import java.util.Random;
 import java.util.Set;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -583,6 +600,111 @@ public final class PaperweightFaweAdapter extends CachedBukkitAdapter implements
             );
         }
         return true;
+    }
+
+    @Override
+    public boolean placeFeature(
+            com.fastasyncworldedit.core.world.feature.ConfiguredFeature feature,
+            EditSession editSession,
+            World world,
+            int x,
+            int y,
+            int z
+    ) {
+        ServerLevel serverLevel = ((CraftWorld) world).getHandle();
+        ChunkGenerator generator = serverLevel.getMinecraftWorld().getChunkSource().getGenerator();
+
+        Registry<ConfiguredFeature<?, ?>> registry = serverLevel
+                .registryAccess()
+                .registryOrThrow(Registry.CONFIGURED_FEATURE_REGISTRY);
+        Holder<ConfiguredFeature<?, ?>> holder = registry
+                .getHolder((ResourceKey<ConfiguredFeature<?, ?>>) feature.getKey())
+                .orElse(null);
+        if (holder == null) {
+            return false;
+        }
+        Random random = ThreadLocalRandom.current();
+        FaweBlockStateListPopulator populator = new FaweBlockStateListPopulator(serverLevel);
+
+        Map<BlockPos, CraftBlockState> placed = TaskManager.taskManager().sync(() -> {
+            serverLevel.captureTreeGeneration = true;
+            serverLevel.captureBlockStates = true;
+            try {
+                if (!holder.value().place(populator, generator, random, new BlockPos(x, y, z))) {
+                    return null;
+                }
+                return populator.getList().stream().collect(Collectors.toMap(
+                        CraftBlockState::getPosition,
+                        craftBlockState -> craftBlockState
+                ));
+            } finally {
+                serverLevel.captureBlockStates = false;
+                serverLevel.captureTreeGeneration = false;
+                serverLevel.capturedBlockStates.clear();
+            }
+        });
+
+        if (placed == null || placed.isEmpty()) {
+            return false;
+        }
+
+        for (Map.Entry<BlockPos, CraftBlockState> entry: placed.entrySet()) {
+            CraftBlockState craftBlockState = entry.getValue();
+            if (entry.getValue() == null) {
+                continue;
+            }
+            BlockPos pos = entry.getKey();
+            editSession.setBlock(pos.getX(), pos.getY(), pos.getZ(),
+                    BukkitAdapter.adapt(craftBlockState.getBlockData())
+            );
+            BlockEntity blockEntity = populator.getBlockEntity(pos);
+            if (blockEntity != null) {
+                net.minecraft.nbt.CompoundTag tag = blockEntity.saveWithId();
+                editSession.setTile(pos.getX(), pos.getY(), pos.getZ(), (CompoundTag) toNative(tag));
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public void setupFeatures() {
+        for (Class<?> clazz : List.of(
+                AquaticFeatures.class,
+                CaveFeatures.class,
+                EndFeatures.class,
+                MiscOverworldFeatures.class,
+                NetherFeatures.class,
+                OreFeatures.class,
+                PileFeatures.class,
+                TreeFeatures.class,
+                VegetationFeatures.class
+        )) {
+            try {
+                for (Field f : clazz.getDeclaredFields()) {
+                    if (!f.canAccess(null)) {
+                        continue;
+                    }
+                    if (f.getType() != ResourceKey.class) {
+                        continue;
+                    }
+                    Object obj = f.get(null);
+                    if (obj instanceof ResourceKey<?> k) {
+                        ResourceKey<ConfiguredFeature<?, ?>> key = (ResourceKey<ConfiguredFeature<?, ?>>) k;
+                        String id = key.location().getNamespace() + ":" + key.location().getPath();
+                        com.fastasyncworldedit.core.world.feature.ConfiguredFeature<ResourceKey<ConfiguredFeature<?, ?>>> feature = new com.fastasyncworldedit.core.world.feature.ConfiguredFeature<>(
+                                id,
+                                key
+                        );
+                        com.fastasyncworldedit.core.world.feature.ConfiguredFeature.REGISTRY.register(
+                                id,
+                                feature
+                        );
+                    }
+                }
+            } catch (IllegalAccessException e) {
+                LOGGER.error("Cannot load features from class: {}", clazz.getSimpleName(), e);
+            }
+        }
     }
 
     @Override

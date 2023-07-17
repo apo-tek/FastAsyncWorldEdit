@@ -60,6 +60,7 @@ import com.fastasyncworldedit.core.util.ProcessorTraverser;
 import com.fastasyncworldedit.core.util.TaskManager;
 import com.fastasyncworldedit.core.util.collection.BlockVector3Set;
 import com.fastasyncworldedit.core.util.task.RunnableVal;
+import com.fastasyncworldedit.core.world.feature.ConfiguredFeature;
 import com.sk89q.worldedit.entity.BaseEntity;
 import com.sk89q.worldedit.entity.Entity;
 import com.sk89q.worldedit.entity.Player;
@@ -4011,6 +4012,17 @@ public class EditSession extends PassthroughExtent implements AutoCloseable {
                 }
             }
         }
+        return changes;
+    }
+
+    /**
+     *
+     * @param feature
+     * @param position
+     * @return
+     */
+    public int placeFeature(ConfiguredFeature<?> feature, BlockVector3 position) {
+        feature.place(this, position);
         return changes;
     }
     //FAWE end

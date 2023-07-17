@@ -5,6 +5,7 @@ import com.fastasyncworldedit.core.queue.implementation.packet.ChunkPacket;
 import com.fastasyncworldedit.core.util.ExtentTraverser;
 import com.fastasyncworldedit.core.util.TaskManager;
 import com.fastasyncworldedit.core.util.task.RunnableVal;
+import com.fastasyncworldedit.core.world.feature.ConfiguredFeature;
 import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.worldedit.EditSession;
 import com.sk89q.worldedit.MaxChangedBlocksException;
@@ -266,6 +267,11 @@ public class WorldWrapper extends AbstractWorld {
     public Collection<BaseItemStack> getBlockDrops(final BlockVector3 position) {
         return TaskManager.taskManager().sync(() -> parent.getBlockDrops(position));
     }
+
+    @Override
+    public boolean canPlaceAt(final BlockVector3 position, final BlockState blockState) {
+        return parent.canPlaceAt(position, blockState);
+    }
     //FAWE end
 
     @Override
@@ -286,6 +292,12 @@ public class WorldWrapper extends AbstractWorld {
         } catch (MaxChangedBlocksException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public boolean placeFeature(final ConfiguredFeature<?> feature, final EditSession editSession, final BlockVector3 pos)
+            throws MaxChangedBlocksException {
+        return parent.placeFeature(feature, editSession, pos);
     }
 
     @Override

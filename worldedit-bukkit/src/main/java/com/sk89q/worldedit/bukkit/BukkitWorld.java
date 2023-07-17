@@ -27,10 +27,12 @@ import com.fastasyncworldedit.core.internal.exception.FaweException;
 import com.fastasyncworldedit.core.queue.IChunkGet;
 import com.fastasyncworldedit.core.queue.implementation.packet.ChunkPacket;
 import com.fastasyncworldedit.core.util.TaskManager;
+import com.fastasyncworldedit.core.world.feature.ConfiguredFeature;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.sk89q.jnbt.CompoundTag;
 import com.sk89q.worldedit.EditSession;
+import com.sk89q.worldedit.MaxChangedBlocksException;
 import com.sk89q.worldedit.WorldEditException;
 import com.sk89q.worldedit.blocks.BaseItem;
 import com.sk89q.worldedit.blocks.BaseItemStack;
@@ -348,6 +350,20 @@ public class BukkitWorld extends AbstractWorld {
         testCoords(pt);
         return WorldEditPlugin.getInstance().getBukkitImplAdapter().generateTree(type, editSession, pt, getWorld());
         //FAWE end
+    }
+
+    @Override
+    public boolean placeFeature(final ConfiguredFeature feature, final EditSession editSession, final BlockVector3 pos) throws
+            MaxChangedBlocksException {
+        testCoords(pos);
+        return WorldEditPlugin.getInstance().getBukkitImplAdapter().placeFeature(
+                feature,
+                editSession,
+                getWorld(),
+                pos.getX(),
+                pos.getY(),
+                pos.getZ()
+        );
     }
 
     @Override
