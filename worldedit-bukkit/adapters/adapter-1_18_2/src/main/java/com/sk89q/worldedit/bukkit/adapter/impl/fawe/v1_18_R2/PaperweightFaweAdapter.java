@@ -618,7 +618,7 @@ public final class PaperweightFaweAdapter extends CachedBukkitAdapter implements
                 .registryAccess()
                 .registryOrThrow(Registry.CONFIGURED_FEATURE_REGISTRY);
         Holder<ConfiguredFeature<?, ?>> holder = registry
-                .getHolder((ResourceKey<ConfiguredFeature<?, ?>>) feature.getKey())
+                .getHolder((ResourceKey<ConfiguredFeature<?, ?>>) feature.getConfiguredFeature())
                 .orElse(null);
         if (holder == null) {
             return false;

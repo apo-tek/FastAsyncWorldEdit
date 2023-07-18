@@ -619,7 +619,7 @@ public final class PaperweightFaweAdapter extends CachedBukkitAdapter implements
             serverLevel.captureTreeGeneration = true;
             serverLevel.captureBlockStates = true;
             try {
-                if (!((ConfiguredFeature<?, ?>) feature.getKey()).place(populator, generator, random, new BlockPos(x, y, z))) {
+                if (!((ConfiguredFeature<?, ?>) feature.getConfiguredFeature()).place(populator, generator, random, new BlockPos(x, y, z))) {
                     return null;
                 }
                 return populator.getList().stream().collect(Collectors.toMap(
